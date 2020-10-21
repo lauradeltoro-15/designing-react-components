@@ -1,9 +1,14 @@
-const Speakers = () => {
+import React from 'react';
+import { withData } from './withData'
+
+const Speakers = ({ speakers }) => {
+
+
     return (
         <div>
-            <h1>Speakers</h1>
+            {speakers.map(speaker => <p>{speaker.name}</p>)}
         </div>
     );
 }
 
-export default Speakers;
+export default withData(2)(Speakers);
