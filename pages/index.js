@@ -1,8 +1,10 @@
+import Layout from "../src/components/Layout/Layout";
+
 const Page = () => {
     return (
-        <div>
+        <Layout>
             <h1>Hello from pluralsight</h1>
-        </div>
+        </Layout>
     );
 }
 
