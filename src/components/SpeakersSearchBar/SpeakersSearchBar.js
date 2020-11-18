@@ -1,4 +1,4 @@
-const SpeakersSearchBar = () => {
+const SpeakersSearchBar = ({ searchQuery, setSearchQuery }) => {
     return (
         <div className="mb-6 ">
             <input
@@ -6,6 +6,7 @@ const SpeakersSearchBar = () => {
                 id="username"
                 type="text"
                 placeholder="Search by name"
+                onChange={(e)=> setSearchQuery(e.target.value)}
             />
         </div>
     );
