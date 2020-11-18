@@ -8,13 +8,33 @@ import axios from 'axios';
 
 const Speakers = () => {
 
-    const [searchQuery, setSearchQuery] = useState("");
+    const REQUEST_STATUS = {
+        LOADING: 'loading',
+        SUCCESS: 'success',
+        ERROR: 'error'
+    }
+
+    const [searchQuery, setSearchQuery] = useState('');
     const [speakers, setSpeakers] = useState([]);
+    const [status, setStatus] = useState(REQUEST_STATUS.LOADING);
+    const [error, setError] = useState({});
+
+    const loadingSucceded = status === REQUEST_STATUS.SUCCESS;
+    const isLoading = status === REQUEST_STATUS.LOADING;
+    const loadingFailed = status === REQUEST_STATUS.ERROR;
+
 
     useEffect(() => {
         const fetchData = async () => {
-            const response = await axios.get('http://localhost:4000/speakers');
-            setSpeakers(response.data);
+            try {
+                const response = await axios.get('http://localhost:4000/speakers');
+                setSpeakers(response.data);
+                setStatus(REQUEST_STATUS.SUCCESS);
+            } catch (e) {
+                setStatus(REQUEST_STATUS.ERROR);
+                setError(e);
+            }
+
         }
         fetchData();
     }, [])
@@ -30,26 +50,35 @@ const Speakers = () => {
         const speakersStateCopy = [...speakers];
         const speakerIndex = speakers.map(speaker => speaker.id).indexOf(speakerToUpdate.id);
         speakersStateCopy.splice(speakerIndex, 1, speakerWithFavouriteToggled);
-
-        await axios.put(`http://localhost:4000/speakers/${speakerToUpdate.id}`, speakerWithFavouriteToggled);
-        setSpeakers(speakersStateCopy);
+        try {
+            await axios.put(`http://localhost:4000/speakers/${speakerToUpdate.id}`, speakerWithFavouriteToggled);
+            setSpeakers(speakersStateCopy);
+        } catch (e) {
+            setStatus(REQUEST_STATUS.ERROR);
+            setError(e);
+        }
     }
 
     return (
         <div>
             <SpeakersSearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-12">
-                {speakers
-                    .filter((rec) => {
-                        const targetString = `${rec.firstName} ${rec.lastName}`.toLowerCase();
-                        return searchQuery.length === 0
-                            ? true
-                            : targetString.includes(searchQuery.toLowerCase());
-                    })
-                    .map((speaker) => (
-                        <Speaker key={speaker.id} {...speaker} onFavouriteToggle={() => onFavouriteToggleHandler(speaker)} />
-                    ))}
-            </div>
+            {isLoading && <div>Loading...</div>}
+            {loadingSucceded &&
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-12">
+                    {speakers
+                        .filter((rec) => {
+                            const targetString = `${rec.firstName} ${rec.lastName}`.toLowerCase();
+                            return searchQuery.length === 0
+                                ? true
+                                : targetString.includes(searchQuery.toLowerCase());
+                        })
+                        .map((speaker) => (
+                            <Speaker key={speaker.id} {...speaker} onFavouriteToggle={() => onFavouriteToggleHandler(speaker)} />
+                        ))}
+                </div>}
+            {loadingFailed &&
+                <div>{`Ooopsss... Something went wrong: ${error}`}</div>
+            }
         </div>
     );
 };
