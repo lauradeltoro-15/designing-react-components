@@ -1,49 +1,38 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { /*useContext,*/ useState, useReducer, useEffect } from 'react';
 import SpeakersSearchBar from '../SpeakersSearchBar/SpeakersSearchBar';
 // import SpeakerRenderProps from './SpeakersRenderProps';
 // import SpeakerContext from './SpeakerContext';
 import Speaker from '../Speaker/Speaker'
 import axios from 'axios';
-
+import REQUEST_ACTIONS from '../../actions/request';
+import requestReducer, { REQUEST_STATUS } from '../../reducers/request';
 
 const Speakers = () => {
 
-    const REQUEST_STATUS = {
-        LOADING: 'loading',
-        SUCCESS: 'success',
-        ERROR: 'error'
-    }
-    const speakersReducer = (prevState, action) => {
-        return {
-            ...prevState,
-            speakers: action.speakers
-        }
-    };
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const [searchQuery, setSearchQuery] = useReducer(speakersReducer, []);
-    const [{ speakers }, setSpeakers] = useState([]);
-    const [status, setStatus] = useState(REQUEST_STATUS.LOADING);
-    const [error, setError] = useState({});
+    const [{ records: speakers, status, error }, dispatch] = useReducer(requestReducer, {
+        records: [],
+        status: REQUEST_STATUS.LOADING,
+        error: null
+    });
 
     const loadingSucceded = status === REQUEST_STATUS.SUCCESS;
     const isLoading = status === REQUEST_STATUS.LOADING;
     const loadingFailed = status === REQUEST_STATUS.ERROR;
 
-
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const response = await axios.get('http://localhost:4000/speakers');
-                setSpeakers({ speakers: response.data, type: 'GET_ALL_SUCCESS' });
-                setStatus(REQUEST_STATUS.SUCCESS);
+                dispatch({ records: response.data, type: REQUEST_ACTIONS.GET_ALL_SUCCESS });
             } catch (e) {
-                setStatus(REQUEST_STATUS.ERROR);
-                setError(e);
+                dispatch({ error: e, type: REQUEST_ACTIONS.GET_ALL_FAILURE });
             }
-
         }
         fetchData();
     }, [])
+
     const toggleSpeakerFavourite = speakerToUpdate => {
         return {
             ...speakerToUpdate,
@@ -53,15 +42,11 @@ const Speakers = () => {
 
     const onFavouriteToggleHandler = async speakerToUpdate => {
         const speakerWithFavouriteToggled = toggleSpeakerFavourite(speakerToUpdate);
-        const speakersStateCopy = [...speakers];
-        const speakerIndex = speakers.map(speaker => speaker.id).indexOf(speakerToUpdate.id);
-        speakersStateCopy.splice(speakerIndex, 1, speakerWithFavouriteToggled);
         try {
             await axios.put(`http://localhost:4000/speakers/${speakerToUpdate.id}`, speakerWithFavouriteToggled);
-            setSpeakers(speakersStateCopy);
+            dispatch({ record: speakerWithFavouriteToggled, type: REQUEST_ACTIONS.PUT_SUCCESS });
         } catch (e) {
-            setStatus(REQUEST_STATUS.ERROR);
-            setError(e);
+            dispatch({ error: e, type: REQUEST_ACTIONS.PUT_FAILURE });
         }
     }
 
